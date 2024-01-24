@@ -76,12 +76,12 @@ def register():
 def request_leave():
     date_str = request.form['leave_date']
     reason = request.form['reason']
-    # user = LeaveRequest.query.filter_by(username=current_user.username, leave_date=datetime.strptime(date_str, '%Y-%m-%d'))
     user = LeaveRequest.query.filter_by(username=current_user.username, leave_date=datetime.strptime(date_str, '%Y-%m-%d').date()).first()
-    print(user)
-    print(datetime.strptime(date_str, '%Y-%m-%d').date())
+    # print(datetime.strptime(date_str, '%Y-%m-%d').date())
+    quota = LeaveRequest.query.filter_by(username=current_user.username).count()
+    print(quota)
 
-    if not user:
+    if not user and quota < 10:
         if not date_str:
             flash('Please enter a date for your leave request.')
             return redirect(url_for('index'))
@@ -97,6 +97,10 @@ def request_leave():
         db.session.commit()
 
         flash('Your leave request has been submitted.')
+        return redirect(url_for('index'))
+    
+    elif quota >= 10:
+        flash('You have reached your leave quota!')
         return redirect(url_for('index'))
     
     else:
