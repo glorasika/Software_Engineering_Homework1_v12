@@ -76,23 +76,32 @@ def register():
 def request_leave():
     date_str = request.form['leave_date']
     reason = request.form['reason']
+    # user = LeaveRequest.query.filter_by(username=current_user.username, leave_date=datetime.strptime(date_str, '%Y-%m-%d'))
+    user = LeaveRequest.query.filter_by(username=current_user.username, leave_date=datetime.strptime(date_str, '%Y-%m-%d').date()).first()
+    print(user)
+    print(datetime.strptime(date_str, '%Y-%m-%d').date())
 
-    if not date_str:
-        flash('Please enter a date for your leave request.')
+    if not user:
+        if not date_str:
+            flash('Please enter a date for your leave request.')
+            return redirect(url_for('index'))
+
+        try:
+            leave_date = datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            flash('Invalid date format. Please use YYYY-MM-DD format.')
+            return redirect(url_for('index'))
+
+        new_leave_request = LeaveRequest(username=current_user.username, leave_date=leave_date, reason=reason)
+        db.session.add(new_leave_request)
+        db.session.commit()
+
+        flash('Your leave request has been submitted.')
         return redirect(url_for('index'))
-
-    try:
-        leave_date = datetime.strptime(date_str, '%Y-%m-%d')
-    except ValueError:
-        flash('Invalid date format. Please use YYYY-MM-DD format.')
+    
+    else:
+        flash('You can\'t request leave on the same date twice.')
         return redirect(url_for('index'))
-
-    new_leave_request = LeaveRequest(username=current_user.username, leave_date=leave_date, reason=reason)
-    db.session.add(new_leave_request)
-    db.session.commit()
-
-    flash('Your leave request has been submitted.')
-    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
